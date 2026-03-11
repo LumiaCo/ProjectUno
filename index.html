@@ -1,13 +1,375 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PolitiDEX – The Political Creature Encyclopedia</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>POLITIDEX v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:#040904;overflow:hidden;font-family:'Press Start 2P',monospace;}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#060e06}::-webkit-scrollbar-thumb{background:#2d5a2d}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes blink{0%,49%{opacity:1}50%,99%{opacity:0}}
+button{cursor:pointer;font-family:'Press Start 2P',monospace;}
+button:hover{filter:brightness(1.4);}
+#app{display:flex;flex-direction:column;width:100vw;height:100vh;overflow:hidden;position:relative;}
+#scanlines{position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);}
+#header{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-bottom:2px solid #1a3a1a;background:#030806;flex-shrink:0;z-index:10;flex-wrap:wrap;gap:4px;}
+#logo{display:flex;align-items:center;gap:10px;}
+#logo-text{font-size:18px;color:#4eff4e;text-shadow:0 0 16px #4eff4e99;letter-spacing:3px;}
+#logo-sub{font-size:6px;color:#2a6a2a;}
+#controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.ctrl-btn{font-size:5px;padding:3px 6px;background:none;border:1px solid #2d5a2d;color:#2a7a2a;}
+.ctrl-btn.active{border-color:var(--ac);color:var(--ac);background:rgba(128,128,128,.15);}
+#disc-count{font-size:6px;color:#2a7a2a;}
+#map-wrap{flex:1;overflow:hidden;position:relative;transition:padding-bottom .25s;}
+#map-wrap.card-open{padding-bottom:56vh;}
+#map-svg{width:100%;height:100%;display:block;cursor:crosshair;}
+#tooltip{position:fixed;z-index:500;font-size:8px;color:#4eff4e;background:#060c06;border:1px solid #2d5a2d;padding:4px 8px;pointer-events:none;white-space:nowrap;box-shadow:0 0 8px #4eff4e44;display:none;}
+#legend{position:absolute;bottom:8px;left:8px;z-index:10;display:flex;flex-direction:column;gap:3px;transition:bottom .25s;}
+#legend.card-open{bottom:58vh;}
+.leg-row{display:flex;align-items:center;gap:4px;}
+.leg-sw{width:10px;height:10px;flex-shrink:0;}
+.leg-lbl{font-size:5.5px;color:#2a7a2a;}
+/* LOADING */
+#loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#040904;z-index:50;}
+#load-text{font-size:14px;color:#4eff4e;text-shadow:0 0 20px #4eff4e;animation:blink 1s infinite;}
+#load-sub{font-size:7px;color:#2a7a2a;}
+/* CARD */
+#card{position:fixed;bottom:0;left:0;right:0;z-index:200;height:56vh;background:#060e06;border-top:3px solid #2d5a2d;border-left:3px solid #2d5a2d;border-right:3px solid #2d5a2d;display:none;flex-direction:column;overflow:hidden;}
+#card-sl{position:absolute;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);}
+#card-hd{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-bottom:2px solid #1a3a1a;background:#030806;flex-shrink:0;z-index:2;}
+#card-id{font-size:7px;color:#2a7a2a;}
+#card-nm{font-size:10px;color:#4eff4e;text-shadow:0 0 10px #4eff4e88;}
+#card-hdr{display:flex;gap:8px;align-items:center;}
+#type-badge{font-size:6px;padding:2px 6px;color:#fff;border:1px solid #fff;display:none;}
+#hth-btn{font-size:6px;padding:2px 8px;background:none;border:1px solid #ff8800;color:#ff8800;}
+#close-btn{font-size:6px;padding:2px 8px;background:none;border:1px solid #882222;color:#882222;}
+#card-body{display:flex;flex:1;overflow:hidden;z-index:2;}
+#card-left{width:155px;flex-shrink:0;border-right:2px solid #1a3a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px;gap:5px;background:#030806;}
+#c-flag{font-size:60px;line-height:1;filter:drop-shadow(0 0 12px rgba(0,255,65,.3));}
+#c-meta{font-size:6px;color:#2a7a2a;text-align:center;line-height:1.9;}
+#c-elec{font-size:5.5px;color:#ffff44;text-align:center;border:1px solid #888800;padding:3px 4px;background:#222200;animation:pulse 1.5s infinite;display:none;}
+#c-als{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:2px;}
+.al-tag{font-size:5px;padding:1px 3px;border:1px solid;}
+#card-right{flex:1;padding:8px 12px;overflow-y:auto;}
+.st-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.st-lbl{font-size:5.5px;color:#3a7a3a;width:50px;text-align:right;flex-shrink:0;}
+.st-pips{display:flex;gap:1.5px;}
+.pip{width:10px;height:8px;border:1px solid #080e08;}
+.st-val{font-size:6px;width:22px;text-align:right;}
+#ide-wrap{position:relative;width:106px;height:8px;border:1px solid #080e08;background:linear-gradient(to right,#4488ff,#555,#ee2222);}
+#ide-cur{position:absolute;top:-2px;width:2px;height:12px;background:#fff;transform:translateX(-50%);}
+#ide-lbl{font-size:5px;color:#4eff4e;width:46px;}
+#flavor-sec{margin-top:6px;padding-top:6px;border-top:1px solid #1a3a1a;}
+#flavor-btn{font-size:6px;padding:4px 10px;background:none;border:1px solid #2d5a2d;color:#4eff4e;}
+#flavor-txt{font-size:6px;color:#4eff4e;line-height:2;margin:0;display:none;}
+/* H2H */
+#hth{position:fixed;inset:0;z-index:300;background:#040904;display:none;flex-direction:column;overflow-y:auto;}
+#hth-sl{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);}
+#hth-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;border-bottom:2px solid #1a3a1a;background:#030806;flex-shrink:0;z-index:1;}
+#hth-title{font-size:13px;color:#ff8800;text-shadow:0 0 12px #ff880088;}
+#hth-body{padding:12px 16px;flex:1;z-index:1;}
+#hth-slots{display:flex;margin-bottom:16px;}
+.slot{flex:1;border:2px solid #2d5a2d;padding:8px;text-align:center;background:#030806;}
+.slot.empty{border-style:dashed;display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:110px;font-size:8px;color:#2a7a2a;gap:4px;}
+.slot-flag{font-size:36px;margin-bottom:4px;}
+.slot-name{font-size:7px;color:#4eff4e;margin-bottom:4px;}
+.slot-type{font-size:5px;margin-bottom:4px;}
+.slot-pop{font-size:5px;color:#2a7a2a;}
+#hth-vs{display:flex;align-items:center;justify-content:center;width:40px;flex-shrink:0;font-size:11px;color:#ff8800;text-shadow:0 0 8px #ff880088;}
+#hth-stats{display:flex;flex-direction:column;gap:8px;}
+.hs-row{}
+.hs-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.hs-l{font-size:6px;width:28px;text-align:right;}
+.hs-n{font-size:6px;color:#3a7a3a;flex:1;text-align:center;}
+.hs-r{font-size:6px;width:28px;}
+.hs-bars{display:flex;height:8px;gap:2px;}
+.hs-bl{flex:1;display:flex;justify-content:flex-end;background:#0e180e;overflow:hidden;}
+.hs-bl-fill{height:100%;transition:width .6s;}
+.hs-div{width:2px;background:#2d5a2d;flex-shrink:0;}
+.hs-br{flex:1;background:#0e180e;overflow:hidden;}
+.hs-br-fill{height:100%;transition:width .6s;}
+#hth-win{margin-top:12px;text-align:center;font-size:9px;color:#ffff44;text-shadow:0 0 12px #ffff4488;padding:8px;border:2px solid #888800;background:#111100;display:none;}
+#hth-empty{text-align:center;font-size:8px;color:#2a7a2a;margin-top:20px;line-height:2.5;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="scanlines"></div>
+  <div id="header">
+    <div id="logo">
+      <span id="logo-text">POLITIDEX</span>
+      <span id="logo-sub">WORLD POLITICS DATABASE v1.0</span>
+    </div>
+    <div id="controls">
+      <span id="disc-count">0/195 DISCOVERED</span>
+      <button class="ctrl-btn" style="--ac:#ff5555" data-heat="power">POWER</button>
+      <button class="ctrl-btn" style="--ac:#ffdd44" data-heat="economy">ECONOMY</button>
+      <button class="ctrl-btn" style="--ac:#ff8844" data-heat="military">MILITARY</button>
+      <button class="ctrl-btn" style="--ac:#44ff88" data-heat="approval">APPROVAL</button>
+      <button class="ctrl-btn" style="--ac:#4488ff" data-al="NATO">NATO</button>
+      <button class="ctrl-btn" style="--ac:#ffcc00" data-al="EU">EU</button>
+      <button class="ctrl-btn" style="--ac:#ff7700" data-al="BRICS">BRICS+</button>
+      <button class="ctrl-btn" style="--ac:#dd44ff" data-al="G7">G7</button>
+      <button class="ctrl-btn" style="--ac:#ff3355" data-al="SCO">SCO</button>
+      <button class="ctrl-btn" style="--ac:#ff8800" id="hth-open">&#9876; H2H</button>
+    </div>
+  </div>
+  <div id="map-wrap">
+    <div id="loading"><div id="load-text">LOADING MAP...</div><div id="load-sub">FETCHING WORLD TOPOLOGY</div></div>
+    <svg id="map-svg"></svg>
+    <div id="legend"></div>
+  </div>
+  <div id="tooltip"></div>
+  <!-- CARD -->
+  <div id="card">
+    <div id="card-sl"></div>
+    <div id="card-hd">
+      <div style="display:flex;align-items:center;gap:8px;"><span id="card-id">#000</span><span id="card-nm">COUNTRY</span></div>
+      <div id="card-hdr"><span id="type-badge"></span><button id="hth-btn">&#9876; H2H</button><button id="close-btn">&#x2715;</button></div>
+    </div>
+    <div id="card-body">
+      <div id="card-left">
+        <div id="c-flag">&#127987;&#65039;</div>
+        <div id="c-meta"></div>
+        <div id="c-elec">&#128499;&#65039; ELECTION<br/><span id="c-elec-date"></span></div>
+        <div id="c-als"></div>
+      </div>
+      <div id="card-right">
+        <div class="st-row" id="sr-power"><span class="st-lbl">POWER</span><div class="st-pips"></div><span class="st-val" style="color:#ff5555"></span></div>
+        <div class="st-row" id="sr-economy"><span class="st-lbl">ECONOMY</span><div class="st-pips"></div><span class="st-val" style="color:#ffdd44"></span></div>
+        <div class="st-row" id="sr-military"><span class="st-lbl">MILITARY</span><div class="st-pips"></div><span class="st-val" style="color:#ff8844"></span></div>
+        <div class="st-row" id="sr-population"><span class="st-lbl">POPULACE</span><div class="st-pips"></div><span class="st-val" style="color:#44ddff"></span></div>
+        <div class="st-row" id="sr-diplomacy"><span class="st-lbl">DIPLOMAT</span><div class="st-pips"></div><span class="st-val" style="color:#4488ff"></span></div>
+        <div class="st-row" id="sr-approval"><span class="st-lbl">APPROVAL</span><div class="st-pips"></div><span class="st-val" style="color:#44ff88"></span></div>
+        <div class="st-row"><span class="st-lbl">IDEOLOGY</span><div id="ide-wrap"><div id="ide-cur"></div></div><span id="ide-lbl"></span></div>
+        <div id="flavor-sec"><button id="flavor-btn">&#x26A1; ANALYZE WITH POLITIDEX</button><p id="flavor-txt"></p></div>
+      </div>
+    </div>
+  </div>
+  <!-- H2H -->
+  <div id="hth">
+    <div id="hth-sl"></div>
+    <div id="hth-hd">
+      <span id="hth-title">&#9876; HEAD-TO-HEAD</span>
+      <div style="display:flex;gap:8px;">
+        <button class="ctrl-btn" style="--ac:#888822;font-size:6px;padding:3px 8px;" id="hth-clear">CLEAR</button>
+        <button class="ctrl-btn" style="--ac:#882222;font-size:6px;padding:3px 8px;" id="hth-close">&#x2715; CLOSE</button>
+      </div>
+    </div>
+    <div id="hth-body">
+      <div id="hth-slots">
+        <div id="slot-l" class="slot empty"><span>SELECT</span><span>COUNTRY</span></div>
+        <div id="hth-vs">VS</div>
+        <div id="slot-r" class="slot empty"><span>SELECT</span><span>COUNTRY</span></div>
+      </div>
+      <div id="hth-stats"></div>
+      <div id="hth-win"></div>
+      <div id="hth-empty">SELECT 2 COUNTRIES ON THE MAP<br/><span style="font-size:6px;color:#1a5a1a;">CLICK &#9876; H2H ON EACH CARD</span></div>
+    </div>
+  </div>
+</div>
+<script>
+// ══════ DATA ══════
+const PTYPES={DEMOCRACY:{color:"#2255bb",label:"Democracy",emoji:"🗳️"},AUTHORITARIAN:{color:"#991111",label:"Authoritarian",emoji:"✊"},MONARCHY:{color:"#772299",label:"Monarchy",emoji:"👑"},THEOCRACY:{color:"#995522",label:"Theocracy",emoji:"🕌"},FEDERAL:{color:"#226644",label:"Federal Rep.",emoji:"🏛️"},SOCIALIST:{color:"#668822",label:"Socialist",emoji:"⚙️"},COMMUNIST:{color:"#bb1100",label:"Communist",emoji:"⭐"}};
+const CTYPES={USA:"FEDERAL",CAN:"FEDERAL",MEX:"FEDERAL",BRA:"FEDERAL",ARG:"FEDERAL",COL:"FEDERAL",PER:"DEMOCRACY",CHL:"DEMOCRACY",URY:"DEMOCRACY",ECU:"DEMOCRACY",BOL:"DEMOCRACY",VEN:"AUTHORITARIAN",PRY:"DEMOCRACY",GUY:"DEMOCRACY",SUR:"DEMOCRACY",TTO:"DEMOCRACY",JAM:"DEMOCRACY",DOM:"DEMOCRACY",CUB:"COMMUNIST",HTI:"AUTHORITARIAN",GTM:"DEMOCRACY",HND:"DEMOCRACY",SLV:"DEMOCRACY",NIC:"AUTHORITARIAN",CRI:"DEMOCRACY",PAN:"DEMOCRACY",GBR:"DEMOCRACY",FRA:"DEMOCRACY",DEU:"FEDERAL",ITA:"DEMOCRACY",ESP:"DEMOCRACY",PRT:"DEMOCRACY",NLD:"DEMOCRACY",BEL:"DEMOCRACY",CHE:"DEMOCRACY",AUT:"DEMOCRACY",SWE:"DEMOCRACY",NOR:"DEMOCRACY",DNK:"DEMOCRACY",FIN:"DEMOCRACY",IRL:"DEMOCRACY",GRC:"DEMOCRACY",POL:"DEMOCRACY",CZE:"DEMOCRACY",SVK:"DEMOCRACY",HUN:"AUTHORITARIAN",ROU:"DEMOCRACY",BGR:"DEMOCRACY",HRV:"DEMOCRACY",SVN:"DEMOCRACY",EST:"DEMOCRACY",LVA:"DEMOCRACY",LTU:"DEMOCRACY",SRB:"AUTHORITARIAN",MKD:"DEMOCRACY",ALB:"DEMOCRACY",BIH:"DEMOCRACY",MNE:"DEMOCRACY",MDA:"DEMOCRACY",UKR:"DEMOCRACY",BLR:"AUTHORITARIAN",RUS:"AUTHORITARIAN",LUX:"DEMOCRACY",MLT:"DEMOCRACY",CYP:"DEMOCRACY",ISL:"DEMOCRACY",LIE:"MONARCHY",MCO:"MONARCHY",AND:"DEMOCRACY",SMR:"DEMOCRACY",ARM:"DEMOCRACY",GEO:"DEMOCRACY",JPN:"DEMOCRACY",KOR:"DEMOCRACY",CHN:"COMMUNIST",PRK:"COMMUNIST",TWN:"DEMOCRACY",MNG:"DEMOCRACY",VNM:"COMMUNIST",LAO:"COMMUNIST",KHM:"AUTHORITARIAN",THA:"MONARCHY",MMR:"AUTHORITARIAN",MYS:"DEMOCRACY",SGP:"DEMOCRACY",IDN:"FEDERAL",PHL:"DEMOCRACY",BRN:"MONARCHY",TLS:"DEMOCRACY",AUS:"FEDERAL",NZL:"DEMOCRACY",PNG:"DEMOCRACY",FJI:"DEMOCRACY",IND:"FEDERAL",PAK:"FEDERAL",BGD:"DEMOCRACY",LKA:"DEMOCRACY",NPL:"DEMOCRACY",BTN:"MONARCHY",MDV:"DEMOCRACY",AFG:"AUTHORITARIAN",SAU:"MONARCHY",ARE:"MONARCHY",QAT:"MONARCHY",KWT:"MONARCHY",BHR:"MONARCHY",OMN:"MONARCHY",JOR:"MONARCHY",IRN:"THEOCRACY",IRQ:"FEDERAL",SYR:"AUTHORITARIAN",LBN:"DEMOCRACY",ISR:"DEMOCRACY",PSE:"AUTHORITARIAN",YEM:"AUTHORITARIAN",TUR:"AUTHORITARIAN",AZE:"AUTHORITARIAN",KAZ:"AUTHORITARIAN",UZB:"AUTHORITARIAN",TKM:"AUTHORITARIAN",TJK:"AUTHORITARIAN",KGZ:"AUTHORITARIAN",NGA:"FEDERAL",ETH:"FEDERAL",EGY:"AUTHORITARIAN",ZAF:"DEMOCRACY",KEN:"DEMOCRACY",GHA:"DEMOCRACY",TZA:"AUTHORITARIAN",UGA:"AUTHORITARIAN",RWA:"AUTHORITARIAN",MOZ:"DEMOCRACY",ZMB:"DEMOCRACY",MWI:"DEMOCRACY",BWA:"DEMOCRACY",NAM:"DEMOCRACY",ZWE:"AUTHORITARIAN",AGO:"AUTHORITARIAN",DZA:"AUTHORITARIAN",MAR:"MONARCHY",TUN:"DEMOCRACY",LBY:"AUTHORITARIAN",SDN:"AUTHORITARIAN",SOM:"AUTHORITARIAN",ERI:"AUTHORITARIAN",DJI:"AUTHORITARIAN",CMR:"AUTHORITARIAN",CIV:"DEMOCRACY",SEN:"DEMOCRACY",MLI:"AUTHORITARIAN",BFA:"AUTHORITARIAN",NER:"AUTHORITARIAN",TCD:"AUTHORITARIAN",CAF:"AUTHORITARIAN",COD:"AUTHORITARIAN",COG:"AUTHORITARIAN",GAB:"AUTHORITARIAN",GNQ:"AUTHORITARIAN",LBR:"DEMOCRACY",SLE:"DEMOCRACY",GIN:"AUTHORITARIAN",GNB:"AUTHORITARIAN",GMB:"DEMOCRACY",TGO:"AUTHORITARIAN",BEN:"DEMOCRACY",COM:"DEMOCRACY",MDG:"DEMOCRACY",MUS:"DEMOCRACY",SYC:"DEMOCRACY",SWZ:"MONARCHY",LSO:"DEMOCRACY"};
+const ALLIANCES={NATO:{color:"#4488ff",m:new Set(["USA","GBR","FRA","DEU","ITA","ESP","CAN","TUR","POL","NLD","BEL","PRT","NOR","DNK","GRC","CZE","HUN","ROU","BGR","HRV","SVK","SVN","EST","LVA","LTU","ALB","MNE","MKD","ISL","LUX","FIN","SWE"])},EU:{color:"#ffcc00",m:new Set(["FRA","DEU","ITA","ESP","POL","NLD","BEL","SWE","AUT","DNK","FIN","GRC","PRT","CZE","ROU","HUN","BGR","SVK","HRV","SVN","EST","LVA","LTU","LUX","MLT","CYP","IRL"])},BRICS:{color:"#ff7700",m:new Set(["BRA","RUS","IND","CHN","ZAF","SAU","ARE","ETH","IRN","EGY"])},G7:{color:"#dd44ff",m:new Set(["USA","GBR","FRA","DEU","ITA","JPN","CAN"])},SCO:{color:"#ff3355",m:new Set(["CHN","RUS","IND","PAK","KAZ","UZB","TJK","IRN"])}};
+const HSTATS={USA:{p:99,e:99,m:99,id:60,ap:42},CHN:{p:97,e:95,m:95,id:16,ap:82},RUS:{p:85,e:52,m:93,id:20,ap:80},IND:{p:78,e:72,m:78,id:54,ap:75},GBR:{p:72,e:80,m:72,id:58,ap:40},FRA:{p:70,e:78,m:70,id:50,ap:35},DEU:{p:68,e:85,m:55,id:63,ap:47},JPN:{p:65,e:80,m:52,id:57,ap:40},KOR:{p:55,e:70,m:62,id:60,ap:45},SAU:{p:58,e:68,m:62,id:14,ap:72},TUR:{p:55,e:52,m:65,id:35,ap:55},BRA:{p:60,e:62,m:58,id:48,ap:38},IRN:{p:50,e:33,m:60,id:10,ap:50},ISR:{p:52,e:65,m:76,id:54,ap:49},PRK:{p:35,e:8,m:55,id:4,ap:90},PAK:{p:48,e:35,m:56,id:32,ap:40},NGA:{p:45,e:38,m:42,id:50,ap:35},IDN:{p:52,e:55,m:48,id:52,ap:60},MEX:{p:48,e:55,m:42,id:52,ap:40},ZAF:{p:42,e:48,m:38,id:55,ap:45},AUS:{p:55,e:72,m:58,id:65,ap:50},CAN:{p:60,e:75,m:55,id:67,ap:48},ESP:{p:52,e:65,m:50,id:55,ap:35},ITA:{p:55,e:68,m:52,id:52,ap:35},ARG:{p:42,e:38,m:35,id:45,ap:30},SGP:{p:45,e:75,m:48,id:55,ap:72}};
+const ELECTIONS={CAN:"Apr 28, 2025",AUS:"May 17, 2025",PHL:"May 12, 2025",POL:"May 2025",NOR:"Sep 2025",CZE:"Oct 2025"};
+const CCN3={4:"AFG",8:"ALB",12:"DZA",24:"AGO",32:"ARG",36:"AUS",40:"AUT",50:"BGD",56:"BEL",64:"BTN",68:"BOL",70:"BIH",72:"BWA",76:"BRA",100:"BGR",104:"MMR",116:"KHM",120:"CMR",124:"CAN",140:"CAF",144:"LKA",152:"CHL",156:"CHN",170:"COL",180:"COD",188:"CRI",191:"HRV",192:"CUB",196:"CYP",203:"CZE",204:"BEN",208:"DNK",218:"ECU",818:"EGY",222:"SLV",231:"ETH",246:"FIN",250:"FRA",266:"GAB",276:"DEU",288:"GHA",300:"GRC",320:"GTM",332:"HTI",340:"HND",348:"HUN",356:"IND",360:"IDN",364:"IRN",368:"IRQ",372:"IRL",376:"ISR",380:"ITA",388:"JAM",392:"JPN",400:"JOR",398:"KAZ",404:"KEN",408:"PRK",410:"KOR",414:"KWT",418:"LAO",422:"LBN",430:"LBR",434:"LBY",440:"LTU",442:"LUX",454:"MWI",458:"MYS",466:"MLI",484:"MEX",496:"MNG",504:"MAR",508:"MOZ",516:"NAM",524:"NPL",528:"NLD",554:"NZL",558:"NIC",562:"NER",566:"NGA",578:"NOR",586:"PAK",591:"PAN",598:"PNG",600:"PRY",604:"PER",608:"PHL",616:"POL",620:"PRT",634:"QAT",642:"ROU",643:"RUS",646:"RWA",682:"SAU",686:"SEN",694:"SLE",703:"SVK",705:"SVN",706:"SOM",710:"ZAF",724:"ESP",752:"SWE",756:"CHE",760:"SYR",764:"THA",768:"TGO",780:"TTO",788:"TUN",792:"TUR",800:"UGA",804:"UKR",784:"ARE",826:"GBR",840:"USA",858:"URY",860:"UZB",862:"VEN",704:"VNM",887:"YEM",894:"ZMB",716:"ZWE",51:"ARM",31:"AZE",112:"BLR",417:"KGZ",762:"TJK",795:"TKM",233:"EST",428:"LVA",498:"MDA",688:"SRB",807:"MKD",499:"MNE",268:"GEO",480:"MUS",174:"COM",690:"SYC",132:"CPV",462:"MDV",748:"SWZ",426:"LSO",232:"ERI",262:"DJI"};
+const A2={AFG:"AF",ALB:"AL",DZA:"DZ",AGO:"AO",ARG:"AR",AUS:"AU",AUT:"AT",BGD:"BD",BEL:"BE",BTN:"BT",BOL:"BO",BIH:"BA",BWA:"BW",BRA:"BR",BGR:"BG",MMR:"MM",KHM:"KH",CMR:"CM",CAN:"CA",CAF:"CF",LKA:"LK",CHL:"CL",CHN:"CN",COL:"CO",COD:"CD",CRI:"CR",HRV:"HR",CUB:"CU",CYP:"CY",CZE:"CZ",BEN:"BJ",DNK:"DK",ECU:"EC",EGY:"EG",SLV:"SV",ETH:"ET",FIN:"FI",FRA:"FR",GAB:"GA",DEU:"DE",GHA:"GH",GRC:"GR",GTM:"GT",HTI:"HT",HND:"HN",HUN:"HU",IND:"IN",IDN:"ID",IRN:"IR",IRQ:"IQ",IRL:"IE",ISR:"IL",ITA:"IT",JAM:"JM",JPN:"JP",JOR:"JO",KAZ:"KZ",KEN:"KE",PRK:"KP",KOR:"KR",KWT:"KW",LAO:"LA",LBN:"LB",LBR:"LR",LBY:"LY",LTU:"LT",LUX:"LU",MWI:"MW",MYS:"MY",MLI:"ML",MEX:"MX",MNG:"MN",MAR:"MA",MOZ:"MZ",NAM:"NA",NPL:"NP",NLD:"NL",NZL:"NZ",NIC:"NI",NER:"NE",NGA:"NG",NOR:"NO",PAK:"PK",PAN:"PA",PNG:"PG",PRY:"PY",PER:"PE",PHL:"PH",POL:"PL",PRT:"PT",QAT:"QA",ROU:"RO",RUS:"RU",RWA:"RW",SAU:"SA",SEN:"SN",SLE:"SL",SVK:"SK",SVN:"SI",SOM:"SO",ZAF:"ZA",ESP:"ES",SWE:"SE",CHE:"CH",SYR:"SY",THA:"TH",TGO:"TG",TTO:"TT",TUN:"TN",TUR:"TR",UGA:"UG",UKR:"UA",ARE:"AE",GBR:"GB",USA:"US",URY:"UY",UZB:"UZ",VEN:"VE",VNM:"VN",YEM:"YE",ZMB:"ZM",ZWE:"ZW",ARM:"AM",AZE:"AZ",BLR:"BY",KGZ:"KG",TJK:"TJ",TKM:"TM",EST:"EE",LVA:"LV",MDA:"MD",SRB:"RS",MKD:"MK",BIH:"BA",MNE:"ME",GEO:"GE",MUS:"MU",COM:"KM",SYC:"SC",CPV:"CV",MDV:"MV",SWZ:"SZ",LSO:"LS",ERI:"ER",DJI:"DJ",SGP:"SG",BRN:"BN",TWN:"TW",PSE:"PS"};
+const CDATA={USA:{pop:331,cap:"Washington D.C.",reg:"Americas",bd:["CAN","MEX"]},GBR:{pop:67,cap:"London",reg:"Europe",bd:["IRL"]},FRA:{pop:68,cap:"Paris",reg:"Europe",bd:["DEU","ESP","ITA","BEL","CHE"]},DEU:{pop:84,cap:"Berlin",reg:"Europe",bd:["FRA","NLD","POL","CZE","AUT","CHE"]},JPN:{pop:126,cap:"Tokyo",reg:"Asia",bd:[]},CHN:{pop:1402,cap:"Beijing",reg:"Asia",bd:["RUS","MNG","KAZ","PAK","IND","VNM","LAO","MMR","PRK"]},IND:{pop:1380,cap:"New Delhi",reg:"Asia",bd:["PAK","CHN","NPL","BGD","MMR"]},BRA:{pop:214,cap:"Brasília",reg:"Americas",bd:["ARG","BOL","COL","PRY","PER","URY","VEN"]},RUS:{pop:145,cap:"Moscow",reg:"Europe",bd:["NOR","FIN","EST","LVA","LTU","BLR","POL","UKR","GEO","AZE","KAZ","CHN","MNG","PRK"]},CAN:{pop:38,cap:"Ottawa",reg:"Americas",bd:["USA"]},AUS:{pop:26,cap:"Canberra",reg:"Oceania",bd:[]},MEX:{pop:128,cap:"Mexico City",reg:"Americas",bd:["USA","GTM"]},KOR:{pop:52,cap:"Seoul",reg:"Asia",bd:["PRK"]},ESP:{pop:47,cap:"Madrid",reg:"Europe",bd:["FRA","PRT"]},ITA:{pop:60,cap:"Rome",reg:"Europe",bd:["FRA","CHE","AUT","SVN"]},SAU:{pop:35,cap:"Riyadh",reg:"Asia",bd:["IRQ","JOR","KWT","OMN","QAT","ARE","YEM"]},TUR:{pop:84,cap:"Ankara",reg:"Asia",bd:["GRC","BGR","GEO","ARM","AZE","IRN","IRQ","SYR"]},IRN:{pop:84,cap:"Tehran",reg:"Asia",bd:["ARM","AZE","IRQ","PAK","TUR","TKM","AFG"]},IDN:{pop:273,cap:"Jakarta",reg:"Asia",bd:["PNG","TLS","MYS"]},NGA:{pop:211,cap:"Abuja",reg:"Africa",bd:["BEN","CMR","NER","TCD"]},ARG:{pop:45,cap:"Buenos Aires",reg:"Americas",bd:["BOL","BRA","CHL","PRY","URY"]},ZAF:{pop:60,cap:"Cape Town",reg:"Africa",bd:["BWA","LSO","MOZ","NAM","SWZ","ZWE"]},EGY:{pop:102,cap:"Cairo",reg:"Africa",bd:["ISR","LBY","SDN"]},PAK:{pop:220,cap:"Islamabad",reg:"Asia",bd:["AFG","CHN","IND","IRN"]},POL:{pop:38,cap:"Warsaw",reg:"Europe",bd:["BLR","CZE","DEU","LTU","RUS","SVK","UKR"]},ETH:{pop:118,cap:"Addis Ababa",reg:"Africa",bd:["DJI","ERI","KEN","SOM","SDN"]},KEN:{pop:53,cap:"Nairobi",reg:"Africa",bd:["ETH","SOM","TZA","UGA"]},GHA:{pop:32,cap:"Accra",reg:"Africa",bd:["BFA","CIV","TGO"]},SGP:{pop:6,cap:"Singapore",reg:"Asia",bd:["MYS"]}};
+const CNAMES={AFG:"Afghanistan",ALB:"Albania",DZA:"Algeria",AGO:"Angola",ARG:"Argentina",AUS:"Australia",AUT:"Austria",BGD:"Bangladesh",BEL:"Belgium",BTN:"Bhutan",BOL:"Bolivia",BIH:"Bosnia",BWA:"Botswana",BRA:"Brazil",BGR:"Bulgaria",MMR:"Myanmar",KHM:"Cambodia",CMR:"Cameroon",CAN:"Canada",CAF:"C. African Rep.",LKA:"Sri Lanka",CHL:"Chile",CHN:"China",COL:"Colombia",COD:"DR Congo",COG:"Congo",CRI:"Costa Rica",HRV:"Croatia",CUB:"Cuba",CYP:"Cyprus",CZE:"Czechia",BEN:"Benin",DNK:"Denmark",ECU:"Ecuador",EGY:"Egypt",SLV:"El Salvador",ETH:"Ethiopia",FIN:"Finland",FRA:"France",GAB:"Gabon",DEU:"Germany",GHA:"Ghana",GRC:"Greece",GTM:"Guatemala",HTI:"Haiti",HND:"Honduras",HUN:"Hungary",IND:"India",IDN:"Indonesia",IRN:"Iran",IRQ:"Iraq",IRL:"Ireland",ISR:"Israel",ITA:"Italy",JAM:"Jamaica",JPN:"Japan",JOR:"Jordan",KAZ:"Kazakhstan",KEN:"Kenya",PRK:"N. Korea",KOR:"S. Korea",KWT:"Kuwait",LAO:"Laos",LBN:"Lebanon",LBR:"Liberia",LBY:"Libya",LTU:"Lithuania",LUX:"Luxembourg",MWI:"Malawi",MYS:"Malaysia",MLI:"Mali",MEX:"Mexico",MNG:"Mongolia",MAR:"Morocco",MOZ:"Mozambique",NAM:"Namibia",NPL:"Nepal",NLD:"Netherlands",NZL:"New Zealand",NIC:"Nicaragua",NER:"Niger",NGA:"Nigeria",NOR:"Norway",PAK:"Pakistan",PAN:"Panama",PNG:"Papua New Guinea",PRY:"Paraguay",PER:"Peru",PHL:"Philippines",POL:"Poland",PRT:"Portugal",QAT:"Qatar",ROU:"Romania",RUS:"Russia",RWA:"Rwanda",SAU:"Saudi Arabia",SEN:"Senegal",SLE:"Sierra Leone",SVK:"Slovakia",SVN:"Slovenia",SOM:"Somalia",ZAF:"South Africa",ESP:"Spain",SWE:"Sweden",CHE:"Switzerland",SYR:"Syria",THA:"Thailand",TGO:"Togo",TTO:"Trinidad",TUN:"Tunisia",TUR:"Turkey",UGA:"Uganda",UKR:"Ukraine",ARE:"UAE",GBR:"United Kingdom",USA:"United States",URY:"Uruguay",UZB:"Uzbekistan",VEN:"Venezuela",VNM:"Vietnam",YEM:"Yemen",ZMB:"Zambia",ZWE:"Zimbabwe",ARM:"Armenia",AZE:"Azerbaijan",BLR:"Belarus",KGZ:"Kyrgyzstan",TJK:"Tajikistan",TKM:"Turkmenistan",EST:"Estonia",LVA:"Latvia",MDA:"Moldova",SRB:"Serbia",MKD:"N. Macedonia",MNE:"Montenegro",GEO:"Georgia",MUS:"Mauritius",COM:"Comoros",SYC:"Seychelles",CPV:"Cape Verde",MDV:"Maldives",SWZ:"Eswatini",LSO:"Lesotho",ERI:"Eritrea",DJI:"Djibouti",SGP:"Singapore",BRN:"Brunei",PSE:"Palestine",TZA:"Tanzania",MOZ:"Mozambique",ZMB:"Zambia",MWI:"Malawi",BWA:"Botswana",NAM:"Namibia",AGO:"Angola",CMR:"Cameroon",CIV:"Ivory Coast",BFA:"Burkina Faso",NER:"Niger",TCD:"Chad",CAF:"Cent. Afr. Rep.",COD:"DR Congo",GAB:"Gabon",GNQ:"Eq. Guinea",GIN:"Guinea",GNB:"Guinea-Bissau",GMB:"Gambia",MDG:"Madagascar",SDN:"Sudan",LBY:"Libya",DZA:"Algeria",MAR:"Morocco"};
+function getFlag(cca3){const a2=A2[cca3];if(!a2)return"🏳️";const b=0x1F1E6,A="A".charCodeAt(0);return String.fromCodePoint(b+a2.charCodeAt(0)-A)+String.fromCodePoint(b+a2.charCodeAt(1)-A);}
+function calcStats(cca3){const h=HSTATS[cca3],cd=CDATA[cca3]||{};const pop=(cd.pop||1)*1e6;const bd=(cd.bd||[]).length;const ps=Math.min(98,Math.round(Math.log10(pop+1)*18));return{power:h?.p??Math.min(90,Math.round(ps*.7+12)),economy:h?.e??Math.min(88,Math.round(ps*.65+20)),military:h?.m??Math.min(82,Math.round(ps*.55+15)),population:ps,diplomacy:Math.min(95,bd*9+25),ideology:h?.id??(40+cca3.charCodeAt(0)%30),approval:h?.ap??(30+cca3.charCodeAt(1)%40)};}
+function fmtPop(n){return n>=1e9?(n/1e9).toFixed(2)+"B":n>=1e6?(n/1e6).toFixed(1)+"M":Math.round(n/1e3)+"K";}
+function getCAs(cca3){return Object.entries(ALLIANCES).filter(([,a])=>a.m.has(cca3)).map(([k,a])=>({key:k,color:a.color}));}
+// ══════ STATE ══════
+const S={sel:null,hth:[],heat:null,al:null,disc:new Set(),flavors:{},loadF:false,showHth:false,hov:null,lk:{}};
+// ══════ MAP ══════
+const W=960,H=500;
+const proj=d3.geoNaturalEarth1().scale(153).translate([W/2,H/2]);
+const path=d3.geoPath().projection(proj);
+const svg=d3.select("#map-svg").attr("viewBox",`0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+svg.append("rect").attr("width",W).attr("height",H).attr("fill","#080e08");
+svg.append("path").datum(d3.geoGraticule()()).attr("fill","none").attr("stroke","#111a11").attr("stroke-width",.3);
+const cg=svg.append("g");
+svg.append("path").datum({type:"Sphere"}).attr("fill","none").attr("stroke","#1e3e1e").attr("stroke-width",1).attr("d",path);
+function getFill(cca3,hov){
+  if(!cca3)return"#111a11";
+  if(S.sel===cca3)return"#4eff4e";
+  if(S.al){const a=ALLIANCES[S.al];if(a?.m.has(cca3))return hov?a.color:a.color+"aa";return"#0a110a";}
+  if(S.heat){const v=calcStats(cca3)[S.heat]/100;const g=Math.round(30+v*200),rb=Math.round(v*40);return hov?`rgb(${rb+30},${g+30},${rb+30})`:`rgb(${rb},${g},${rb})`;}
+  const t=CTYPES[cca3],base=t?PTYPES[t]?.color:"#2d5a2d";
+  if(hov)return(base||"#2d5a2d")+"ee";
+  if(S.disc.has(cca3))return(base||"#2d5a2d")+"99";
+  return(base||"#2d5a2d")+"66";
+}
+function recolor(){cg.selectAll("path.country").attr("fill",d=>getFill(S.lk[d.id],S.hov===d.id));}
+function buildLegend(){
+  const el=document.getElementById("legend");el.innerHTML="";
+  if(S.heat||S.al)return;
+  Object.entries(PTYPES).forEach(([,v])=>{
+    el.innerHTML+=`<div class="leg-row"><div class="leg-sw" style="background:${v.color}99;border:1px solid ${v.color}"></div><span class="leg-lbl">${v.label.toUpperCase()}</span></div>`;
+  });
+}
+// ══════ CARD ══════
+function setPips(rowId,val,color){
+  const r=document.getElementById(rowId);if(!r)return;
+  const p=r.querySelector(".st-pips"),v=r.querySelector(".st-val");
+  const f=Math.round(val/10);p.innerHTML="";
+  for(let i=0;i<10;i++){const d=document.createElement("div");d.className="pip";d.style.background=i<f?color:"#0e180e";p.appendChild(d);}
+  v.textContent=val;v.style.color=color;
+}
+function showCard(cca3){
+  const nm=CNAMES[cca3]||cca3,cd=CDATA[cca3]||{},st=calcStats(cca3);
+  const t=CTYPES[cca3],td=t?PTYPES[t]:null,als=getCAs(cca3),elec=ELECTIONS[cca3];
+  const ccn=Object.entries(CCN3).find(([,v])=>v===cca3)?.[0]||"???";
+  document.getElementById("card-id").textContent="#"+String(ccn).padStart(3,"0");
+  document.getElementById("card-nm").textContent=nm.toUpperCase();
+  document.getElementById("c-flag").textContent=getFlag(cca3);
+  const badge=document.getElementById("type-badge");
+  if(td){badge.textContent=`${td.emoji} ${td.label.toUpperCase()}`;badge.style.background=td.color+"33";badge.style.borderColor=td.color;badge.style.display="inline";}
+  else badge.style.display="none";
+  let m="";
+  if(cd.cap)m+=`🏛 ${cd.cap}<br/>`;
+  if(cd.pop)m+=`👥 ${fmtPop(cd.pop*1e6)}<br/>`;
+  if(cd.reg)m+=`🌍 ${cd.reg}`;
+  document.getElementById("c-meta").innerHTML=m;
+  const ee=document.getElementById("c-elec");
+  if(elec){document.getElementById("c-elec-date").textContent=elec;ee.style.display="block";}else{ee.style.display="none";}
+  document.getElementById("c-als").innerHTML=als.map(a=>`<span class="al-tag" style="border-color:${a.color};color:${a.color};background:${a.color}22">${a.key}</span>`).join("");
+  setPips("sr-power",st.power,"#ff5555");
+  setPips("sr-economy",st.economy,"#ffdd44");
+  setPips("sr-military",st.military,"#ff8844");
+  setPips("sr-population",st.population,"#44ddff");
+  setPips("sr-diplomacy",st.diplomacy,"#4488ff");
+  setPips("sr-approval",st.approval,"#44ff88");
+  document.getElementById("ide-cur").style.left=st.ideology+"%";
+  document.getElementById("ide-lbl").textContent=st.ideology<30?"◀ LEFT":st.ideology>70?"RIGHT ▶":"▪ CENTER";
+  const fb=document.getElementById("flavor-btn"),ft=document.getElementById("flavor-txt");
+  if(S.flavors[cca3]){fb.style.display="none";ft.textContent=S.flavors[cca3];ft.style.display="block";}
+  else{fb.style.display="inline-block";fb.textContent="⚡ ANALYZE WITH POLITIDEX";fb.disabled=false;ft.style.display="none";}
+  const card=document.getElementById("card");
+  card.style.display="flex";card.style.animation="none";card.offsetHeight;card.style.animation="slideUp .25s cubic-bezier(.16,1,.3,1)";
+  document.getElementById("map-wrap").classList.add("card-open");
+  document.getElementById("legend").classList.add("card-open");
+}
+function hideCard(){
+  document.getElementById("card").style.display="none";
+  document.getElementById("map-wrap").classList.remove("card-open");
+  document.getElementById("legend").classList.remove("card-open");
+  S.sel=null;recolor();
+}
+// ══════ H2H ══════
+function renderSlot(elId,cca3){
+  const el=document.getElementById(elId);
+  if(!cca3){el.className="slot empty";el.innerHTML="<span>SELECT</span><span>COUNTRY</span>";return;}
+  const nm=CNAMES[cca3]||cca3,t=CTYPES[cca3],td=t?PTYPES[t]:null,cd=CDATA[cca3]||{};
+  el.className="slot";
+  el.innerHTML=`<div class="slot-flag">${getFlag(cca3)}</div><div class="slot-name">${nm.toUpperCase()}</div>${td?`<div class="slot-type" style="color:${td.color}">${td.emoji} ${td.label}</div>`:""} ${cd.pop?`<div class="slot-pop">${fmtPop(cd.pop*1e6)}</div>`:""}`;
+}
+function renderHth(){
+  renderSlot("slot-l",S.hth[0]||null);renderSlot("slot-r",S.hth[1]||null);
+  const sd=document.getElementById("hth-stats"),wd=document.getElementById("hth-win"),em=document.getElementById("hth-empty");
+  if(S.hth[0]&&S.hth[1]){
+    em.style.display="none";
+    const s0=calcStats(S.hth[0]),s1=calcStats(S.hth[1]);
+    const SK=[{k:"power",l:"POWER",c:"#ff5555"},{k:"economy",l:"ECONOMY",c:"#ffdd44"},{k:"military",l:"MILITARY",c:"#ff8844"},{k:"population",l:"POPULACE",c:"#44ddff"},{k:"diplomacy",l:"DIPLOMAT",c:"#4488ff"},{k:"approval",l:"APPROVAL",c:"#44ff88"}];
+    sd.innerHTML=SK.map(({k,l,c})=>{
+      const v0=s0[k],v1=s1[k],w=v0>v1?"l":v1>v0?"r":"t";
+      return`<div class="hs-row"><div class="hs-labels"><span class="hs-l" style="color:${w==="l"?c:"#2a7a2a"}">${v0}${w==="l"?" ◀":""}</span><span class="hs-n">${l}</span><span class="hs-r" style="color:${w==="r"?c:"#2a7a2a"}">${w==="r"?"▶ ":""}${v1}</span></div><div class="hs-bars"><div class="hs-bl"><div class="hs-bl-fill" style="width:${v0}%;background:${w==="l"?c:c+"66"}"></div></div><div class="hs-div"></div><div class="hs-br"><div class="hs-br-fill" style="width:${v1}%;background:${w==="r"?c:c+"66"}"></div></div></div></div>`;
+    }).join("");
+    const wL=SK.filter(({k})=>s0[k]>s1[k]).length,wR=SK.filter(({k})=>s1[k]>s0[k]).length;
+    const wc=wL>wR?S.hth[0]:wR>wL?S.hth[1]:null;
+    wd.style.display="block";
+    wd.innerHTML=wc?`🏆 ${(CNAMES[wc]||wc).toUpperCase()} WINS!<div style="font-size:6px;color:#888800;margin-top:4px">${wL}-${wR} CATEGORIES</div>`:`⚖ IT'S A TIE!<div style="font-size:6px;color:#888800;margin-top:4px">${wL}-${wR}</div>`;
+  }else{sd.innerHTML="";wd.style.display="none";em.style.display="block";}
+}
+function showHthPanel(){
+  S.showHth=true;hideCard();
+  const p=document.getElementById("hth");p.style.display="flex";p.style.animation="none";p.offsetHeight;p.style.animation="fadeIn .2s ease-out";
+  renderHth();updateHthBtn();
+}
+function hideHthPanel(){S.showHth=false;document.getElementById("hth").style.display="none";updateHthBtn();}
+function addHth(cca3){if(S.hth.includes(cca3))return;if(S.hth.length>=2)S.hth=[S.hth[1],cca3];else S.hth.push(cca3);showHthPanel();}
+function updateHthBtn(){const b=document.getElementById("hth-open");b.textContent=S.hth.length?`⚔ H2H (${S.hth.length}/2)`:"⚔ H2H";b.classList.toggle("active",S.showHth);}
+// ══════ EVENTS ══════
+document.querySelectorAll("[data-heat]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const k=btn.dataset.heat;S.heat=S.heat===k?null:k;S.al=null;
+    document.querySelectorAll("[data-heat],[data-al]").forEach(b=>b.classList.remove("active"));
+    if(S.heat)btn.classList.add("active");
+    buildLegend();recolor();
+  });
+});
+document.querySelectorAll("[data-al]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const k=btn.dataset.al;S.al=S.al===k?null:k;S.heat=null;
+    document.querySelectorAll("[data-heat],[data-al]").forEach(b=>b.classList.remove("active"));
+    if(S.al)btn.classList.add("active");
+    buildLegend();recolor();
+  });
+});
+document.getElementById("hth-open").addEventListener("click",()=>S.showHth?hideHthPanel():showHthPanel());
+document.getElementById("close-btn").addEventListener("click",hideCard);
+document.getElementById("hth-btn").addEventListener("click",()=>{if(S.sel)addHth(S.sel);});
+document.getElementById("hth-close").addEventListener("click",hideHthPanel);
+document.getElementById("hth-clear").addEventListener("click",()=>{S.hth=[];renderHth();updateHthBtn();});
+document.getElementById("flavor-btn").addEventListener("click",async()=>{
+  const cca3=S.sel;if(!cca3||S.loadF||S.flavors[cca3])return;
+  S.loadF=true;const fb=document.getElementById("flavor-btn");fb.textContent="⟳ SCANNING...";fb.disabled=true;
+  const st=calcStats(cca3),t=CTYPES[cca3]||"UNKNOWN",nm=CNAMES[cca3]||cca3;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`You are a Pokédex for world politics. Write a witty 2-3 sentence entry (max 45 words) for ${nm}. Type: ${t}. Power: ${st.power}/100. Economy: ${st.economy}/100. Military: ${st.military}/100. Approval: ${st.approval}%. Style: dry, factual, slightly ironic. Start with an observation about their political nature. Do NOT say "Pokédex".`}]})});
+    const d=await r.json();S.flavors[cca3]=d.content?.[0]?.text||"DATA CORRUPTED.";
+  }catch{S.flavors[cca3]="SIGNAL LOST. CHECK CONNECTION.";}
+  S.loadF=false;
+  if(S.sel===cca3){fb.style.display="none";const ft=document.getElementById("flavor-txt");ft.textContent=S.flavors[cca3];ft.style.display="block";}
+});
+const tt=document.getElementById("tooltip");
+function showTT(nm,x,y){tt.textContent=nm;tt.style.display="block";tt.style.left=(x+14)+"px";tt.style.top=(y-36)+"px";}
+function hideTT(){tt.style.display="none";}
+// ══════ INIT ══════
+async function init(){
+  try{
+    const topo=await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(r=>r.json());
+    const feats=topojson.feature(topo,topo.objects.countries).features;
+    feats.forEach(f=>{const c=CCN3[f.id];if(c)S.lk[f.id]=c;});
+    cg.selectAll("path.country").data(feats).enter().append("path")
+      .attr("class","country").attr("d",path)
+      .attr("fill",d=>getFill(S.lk[d.id],false))
+      .on("mouseover",function(e,d){
+        S.hov=d.id;d3.select(this).attr("fill",getFill(S.lk[d.id],true));
+        const n=S.lk[d.id]?(CNAMES[S.lk[d.id]]||S.lk[d.id]):null;if(n)showTT(n,e.clientX,e.clientY);
+      })
+      .on("mousemove",function(e,d){
+        const n=S.lk[d.id]?(CNAMES[S.lk[d.id]]||S.lk[d.id]):null;if(n)showTT(n,e.clientX,e.clientY);
+      })
+      .on("mouseout",function(e,d){
+        S.hov=null;d3.select(this).attr("fill",getFill(S.lk[d.id],false));hideTT();
+      })
+      .on("click",function(e,d){
+        const cca3=S.lk[d.id];if(!cca3)return;
+        S.sel=cca3;S.disc.add(cca3);
+        document.getElementById("disc-count").textContent=`${S.disc.size}/195 DISCOVERED`;
+        recolor();buildLegend();showCard(cca3);
+      });
+    document.getElementById("loading").style.display="none";
+    buildLegend();
+  }catch(err){
+    document.getElementById("load-text").textContent="LOAD FAILED";
+    document.getElementById("load-sub").textContent="NEEDS INTERNET: cdn.jsdelivr.net";
+    console.error(err);
+  }
+}
+init();
+</script>
+</body>
 </html>
