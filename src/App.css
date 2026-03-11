@@ -1,0 +1,555 @@
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* ===== App Wrapper ===== */
+.app {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* ===== Pokedex Shell ===== */
+.pokedex-shell {
+  background: #cc0000;
+  border-radius: 16px 16px 8px 8px;
+  box-shadow:
+    0 0 0 4px #880000,
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 rgba(255,255,255,0.15);
+  overflow: hidden;
+}
+
+/* ===== Top Panel ===== */
+.pokedex-top {
+  background: #cc0000;
+  padding: 12px 20px 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 3px solid #880000;
+}
+
+.pokedex-light {
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3), 0 0 8px currentColor;
+}
+
+.pokedex-light.big-light {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle at 35% 35%, #7af, #039);
+  color: #7af;
+  border: 3px solid #fff;
+}
+
+.pokedex-lights-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pokedex-light.sm {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.2);
+}
+
+.pokedex-light.sm.red   { background: #ff4444; color: #ff4444; }
+.pokedex-light.sm.yellow { background: #ffdd44; color: #ffdd44; }
+.pokedex-light.sm.green  { background: #44ff88; color: #44ff88; }
+
+/* ===== Screen Area ===== */
+.pokedex-screen-area {
+  background: #f0f0e8;
+  margin: 12px;
+  border-radius: 8px;
+  padding: 20px;
+  border: 4px solid #555;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+  min-height: 500px;
+}
+
+/* ===== Header ===== */
+.pokedex-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #ddd;
+}
+
+.pokedex-title {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.title-poke {
+  color: #cc0000;
+}
+
+.title-dex {
+  color: #1a1a2e;
+}
+
+.pokedex-subtitle {
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ===== Search Bar ===== */
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.search-input-wrap:focus-within {
+  border-color: #cc0000;
+}
+
+.search-icon {
+  font-size: 1rem;
+  margin-right: 8px;
+  opacity: 0.5;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  background: transparent;
+  color: #222;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #999;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.clear-btn:hover {
+  background: #eee;
+  color: #333;
+}
+
+/* ===== Type Filters ===== */
+.type-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.type-filter-btn {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 2px solid #ccc;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+
+.type-filter-btn:hover {
+  border-color: #888;
+  color: #222;
+}
+
+.type-filter-btn.active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+/* ===== Results Count ===== */
+.results-count {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+/* ===== Card Grid ===== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+/* ===== Pokedex Card ===== */
+.pokedex-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-top: 4px solid #ccc;
+  border-radius: 8px;
+  padding: 14px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pokedex-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.card-number {
+  font-size: 0.7rem;
+  color: #aaa;
+  font-weight: 600;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.card-sprite {
+  font-size: 2.8rem;
+  line-height: 1;
+  margin: 4px 0;
+}
+
+.card-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.card-title {
+  font-size: 0.68rem;
+  color: #888;
+  font-style: italic;
+}
+
+.card-types {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card-state {
+  font-size: 0.7rem;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+/* ===== Type Badge ===== */
+.type-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #888;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+/* ===== Bottom Panel ===== */
+.pokedex-bottom {
+  background: #cc0000;
+  padding: 10px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 3px solid #880000;
+}
+
+.pokedex-dpad {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.dpad-h, .dpad-v {
+  position: absolute;
+  background: #880000;
+  border-radius: 3px;
+}
+
+.dpad-h {
+  width: 100%;
+  height: 33%;
+  top: 33%;
+  left: 0;
+}
+
+.dpad-v {
+  width: 33%;
+  height: 100%;
+  top: 0;
+  left: 33%;
+}
+
+.pokedex-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.2);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3);
+}
+
+.btn-circle.red-btn { background: #ff6666; }
+.btn-circle.blue-btn { background: #6699ff; }
+
+/* ===== Detail View ===== */
+.detail-view {
+  border: 3px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.detail-header {
+  padding: 16px 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.back-btn {
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.5);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+.detail-header-info {
+  flex: 1;
+}
+
+.detail-number {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.detail-name {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.detail-title {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  font-style: italic;
+}
+
+.detail-sprite {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+/* ===== Detail Body ===== */
+.detail-body {
+  padding: 20px;
+}
+
+.detail-types {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.detail-description {
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 6px;
+  border-left: 3px solid #ddd;
+}
+
+/* ===== Profile Grid ===== */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f4f4f4;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.profile-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  font-weight: 700;
+}
+
+.profile-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* ===== Stats Section ===== */
+.stats-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 100px 36px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #222;
+  text-align: right;
+}
+
+.stat-track {
+  background: #e8e8e8;
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ===== Abilities Section ===== */
+.abilities-section {
+  margin-bottom: 8px;
+}
+
+.abilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ability-badge {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 2px solid;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #fff;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  #root {
+    padding: 0.5rem;
+  }
+
+  .pokedex-screen-area {
+    padding: 14px;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .profile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-row {
+    grid-template-columns: 80px 30px 1fr;
+  }
+
+  .detail-header {
+    flex-wrap: wrap;
+  }
+}
